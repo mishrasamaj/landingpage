@@ -1,0 +1,1539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AETHER | Creative Digital Studio</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Space+Grotesk:wght@300;400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+
+    <!-- GSAP & ScrollTrigger CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollToPlugin.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --text-color: #e0e0e0;
+            --accent-color: #ccff00; /* Acid Lime */
+            --secondary-text: #888888;
+            --grid-line: rgba(255, 255, 255, 0.05);
+            --cursor-size: 20px;
+            --font-display: 'Syne', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'Space Grotesk', monospace;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+            --radius-lg: 28px;
+            --radius-md: 18px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-body);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Use custom cursor only on precise pointer devices */
+        @media (hover: hover) and (pointer: fine) {
+            * { cursor: none; } /* Hide default cursor for custom one */
+        }
+
+        /* Respect reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+        }
+
+        html { scroll-behavior: smooth; }
+
+        /* Better selection + scrollbar */
+        ::selection { background: rgba(204, 255, 0, 0.25); color: #fff; }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: #070707; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 999px; border: 2px solid #070707; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+
+        /* --- Noise Overlay --- */
+        .noise-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9000;
+            opacity: 0.05;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* --- Custom Cursor --- */
+        .cursor-dot,
+        .cursor-outline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            z-index: 9999;
+            pointer-events: none;
+        }
+
+        .cursor-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-color);
+        }
+
+        .cursor-outline {
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: width 0.2s, height 0.2s, background-color 0.2s, border-color 0.2s, opacity 0.2s;
+            opacity: 0.9;
+        }
+
+        body.hovering .cursor-outline {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-color);
+            mix-blend-mode: difference;
+        }
+
+        body.cursor-text .cursor-outline {
+            width: 56px;
+            height: 56px;
+            border-color: rgba(204, 255, 0, 0.9);
+            background: rgba(204, 255, 0, 0.08);
+            mix-blend-mode: normal;
+        }
+
+        body.cursor-drag .cursor-outline {
+            width: 84px;
+            height: 84px;
+            border-color: rgba(255, 255, 255, 0.75);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        /* --- Preloader --- */
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 10000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--accent-color);
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+        }
+
+        .loader-text {
+            overflow: hidden;
+        }
+
+        /* --- Typography & Layout Utilities --- */
+        h1, h2, h3 {
+            font-family: var(--font-display);
+            font-weight: 800;
+            line-height: 0.9;
+            text-transform: uppercase;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .kicker {
+            font-family: var(--font-mono);
+            color: var(--accent-color);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .eyebrow {
+            font-family: var(--font-mono);
+            color: var(--secondary-text);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 40px;
+            align-items: start;
+        }
+
+        .pill {
+            display: inline-flex;
+            gap: 10px;
+            align-items: center;
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--card-border);
+            background: rgba(255,255,255,0.03);
+            color: rgba(255,255,255,0.9);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        .btn-magnetic {
+            display: inline-block;
+            position: relative;
+            padding: 20px 40px;
+            border: 1px solid var(--text-color);
+            color: var(--text-color);
+            text-decoration: none;
+            text-transform: uppercase;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            overflow: hidden;
+            transition: color 0.3s;
+            border-radius: 50px; /* Pill shape */
+            background: transparent;
+        }
+
+        .btn-magnetic::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--accent-color);
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: -1;
+        }
+
+        .btn-magnetic:hover {
+            color: #000;
+            border-color: var(--accent-color);
+        }
+
+        .btn-magnetic:hover::before {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+
+        /* --- Header --- */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 30px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            mix-blend-mode: difference;
+        }
+
+        .header-blur {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 96px;
+            z-index: 90;
+            pointer-events: none;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.55), rgba(0,0,0,0));
+            opacity: 0;
+            transition: opacity 0.25s ease;
+        }
+
+        body.scrolled .header-blur { opacity: 1; }
+
+        .logo {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -1px;
+            color: #fff;
+            text-decoration: none;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 40px;
+        }
+
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            position: relative;
+        }
+
+        nav a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--accent-color);
+            transition: width 0.3s ease;
+        }
+
+        nav a:hover::after {
+            width: 100%;
+        }
+
+        /* --- Hero Section --- */
+        #hero {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-bg {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 30% 30%, rgba(204,255,0,0.10) 0%, rgba(204,255,0,0) 55%),
+                radial-gradient(circle at 70% 60%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0) 55%),
+                linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
+            z-index: 0;
+            filter: saturate(120%);
+        }
+
+        .hero-orb {
+            position: absolute;
+            width: 520px;
+            height: 520px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(204,255,0,0.22), rgba(204,255,0,0) 60%);
+            top: 10%;
+            left: 55%;
+            transform: translateX(-50%);
+            filter: blur(10px);
+            opacity: 0.8;
+            z-index: 1;
+        }
+
+        .scroll-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            color: rgba(255,255,255,0.7);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+        .scroll-hint::after {
+            content: '';
+            display: block;
+            width: 1px;
+            height: 28px;
+            margin: 10px auto 0;
+            background: rgba(255,255,255,0.25);
+            animation: scrollPulse 1.6s ease-in-out infinite;
+        }
+        @keyframes scrollPulse {
+            0%, 100% { transform: translateY(0); opacity: 0.35; }
+            50% { transform: translateY(8px); opacity: 0.9; }
+        }
+
+        .hero-content {
+            text-align: center;
+            z-index: 2;
+        }
+
+        .hero-title {
+            font-size: clamp(3rem, 10vw, 9rem); /* Responsive massive text */
+            margin-bottom: 20px;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+            /* Split text will be injected via JS */
+        }
+
+        .hero-title span {
+            display: inline-block;
+            transform: translateY(100%);
+            opacity: 0;
+        }
+
+        .hero-subtitle {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            color: var(--secondary-text);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+        }
+
+        .hero-subtitle span {
+            display: inline-block;
+            transform: translateY(100%);
+        }
+
+        /* --- About Section --- */
+        #about {
+            padding: 150px 0;
+            position: relative;
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .about-text h2 {
+            font-size: 3rem;
+            margin-bottom: 30px;
+        }
+
+        .about-text p {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            color: var(--secondary-text);
+            margin-bottom: 40px;
+            max-width: 500px;
+        }
+
+        .about-visual {
+            position: relative;
+            height: 600px;
+            overflow: hidden;
+        }
+
+        .about-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: grayscale(100%);
+            transition: filter 0.5s;
+        }
+        
+        .about-visual:hover .about-img {
+            filter: grayscale(0%);
+        }
+
+        /* --- Services Section --- */
+        #services {
+            padding: 100px 0;
+            background-color: #0a0a0a;
+            border-top: 1px solid var(--grid-line);
+            border-bottom: 1px solid var(--grid-line);
+        }
+
+        .section-header {
+            margin-bottom: 80px;
+            padding: 0 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .section-title {
+            font-size: 1rem;
+            color: var(--accent-color);
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1px; /* For border effect */
+            background-color: var(--grid-line); /* Border color */
+            border: 1px solid var(--grid-line);
+        }
+
+        .service-card {
+            background-color: var(--bg-color);
+            padding: 60px 40px;
+            transition: background-color 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .service-card:hover {
+            background-color: #111;
+        }
+
+        .service-num {
+            font-family: var(--font-mono);
+            color: var(--secondary-text);
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .service-card h3 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .service-card p {
+            color: var(--secondary-text);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        /* --- Featured Work --- */
+        #work {
+            padding: 150px 0;
+        }
+
+        /* --- Stats Section --- */
+        #stats {
+            padding: 120px 0;
+            border-top: 1px solid var(--grid-line);
+            border-bottom: 1px solid var(--grid-line);
+            background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+        }
+
+        .stat {
+            padding: 28px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--card-border);
+            background: rgba(255,255,255,0.03);
+        }
+
+        .stat .num {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 2.8rem;
+            line-height: 1;
+            color: #fff;
+            letter-spacing: -1px;
+        }
+
+        .stat .label {
+            margin-top: 12px;
+            color: var(--secondary-text);
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+        }
+
+        /* --- Process Section --- */
+        #process {
+            padding: 150px 0;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .step {
+            padding: 26px 26px 22px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--card-border);
+            background: rgba(255,255,255,0.03);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .step::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            background: radial-gradient(circle at 20% 10%, rgba(204,255,0,0.18), rgba(204,255,0,0) 45%);
+            opacity: 0;
+            transition: opacity 0.25s ease;
+            pointer-events: none;
+        }
+
+        .step:hover::before { opacity: 1; }
+
+        .step h3 {
+            font-size: 1.6rem;
+            margin-bottom: 10px;
+        }
+        .step p {
+            color: var(--secondary-text);
+            line-height: 1.65;
+            font-size: 1.02rem;
+            max-width: 55ch;
+        }
+
+        /* --- Team Section --- */
+        #team {
+            padding: 150px 0;
+            background-color: #0a0a0a;
+            border-top: 1px solid var(--grid-line);
+            border-bottom: 1px solid var(--grid-line);
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .member {
+            padding: 18px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--card-border);
+            background: rgba(255,255,255,0.03);
+            transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+        }
+        .member:hover {
+            transform: translateY(-6px);
+            border-color: rgba(204,255,0,0.4);
+            background: rgba(255,255,255,0.04);
+        }
+        .member img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 20px;
+            filter: grayscale(100%);
+            transition: filter 0.35s ease;
+        }
+        .member:hover img { filter: grayscale(0%); }
+        .member .name {
+            margin-top: 16px;
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.4rem;
+            color: #fff;
+            text-transform: uppercase;
+        }
+        .member .role {
+            margin-top: 6px;
+            color: var(--secondary-text);
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.85rem;
+        }
+
+        /* --- Insights Section --- */
+        #insights {
+            padding: 150px 0;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .post {
+            padding: 24px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--card-border);
+            background: rgba(255,255,255,0.03);
+            transition: transform 0.25s ease, border-color 0.25s ease;
+        }
+        .post:hover {
+            transform: translateY(-6px);
+            border-color: rgba(255,255,255,0.18);
+        }
+        .post .meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            color: var(--secondary-text);
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.75rem;
+            margin-bottom: 14px;
+        }
+        .post h3 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+        .post p {
+            color: var(--secondary-text);
+            line-height: 1.65;
+            font-size: 1.02rem;
+        }
+        .post a {
+            display: inline-flex;
+            margin-top: 16px;
+            color: #fff;
+            text-decoration: none;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .post a:hover { color: var(--accent-color); }
+
+        /* --- FAQ Section --- */
+        #faq {
+            padding: 150px 0 120px;
+            border-top: 1px solid var(--grid-line);
+        }
+        .faq-wrap {
+            display: grid;
+            grid-template-columns: 0.9fr 1.1fr;
+            gap: 28px;
+            align-items: start;
+        }
+        details.faq {
+            border: 1px solid var(--card-border);
+            background: rgba(255,255,255,0.03);
+            border-radius: var(--radius-md);
+            padding: 18px 18px;
+            margin-bottom: 12px;
+        }
+        details.faq summary {
+            list-style: none;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+        }
+        details.faq summary::-webkit-details-marker { display: none; }
+        details.faq summary .plus {
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.18);
+            display: grid;
+            place-items: center;
+            color: rgba(255,255,255,0.85);
+            flex: 0 0 auto;
+        }
+        details.faq[open] summary .plus { border-color: rgba(204,255,0,0.45); color: var(--accent-color); }
+        details.faq p {
+            margin-top: 14px;
+            color: var(--secondary-text);
+            line-height: 1.7;
+            font-size: 1.02rem;
+            max-width: 65ch;
+        }
+
+        .project-list {
+            margin-top: 50px;
+        }
+
+        .project-item {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 150px;
+            position: relative;
+        }
+
+        .project-image-wrapper {
+            width: 100%;
+            height: 60vh;
+            overflow: hidden;
+            position: relative;
+            margin-bottom: 30px;
+        }
+
+        .project-image {
+            width: 100%;
+            height: 120%; /* Taller for parallax */
+            object-fit: cover;
+            position: absolute;
+            top: -10%;
+        }
+
+        .project-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 50px;
+            border-top: 1px solid var(--grid-line);
+            padding-top: 20px;
+        }
+
+        .project-title {
+            font-size: 3rem;
+            color: #fff;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .project-title:hover {
+            color: var(--accent-color);
+        }
+
+        .project-tags {
+            font-family: var(--font-mono);
+            color: var(--secondary-text);
+        }
+
+        /* --- Call to Action --- */
+        #cta {
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #050505 70%);
+        }
+
+        .cta-title {
+            font-size: clamp(2rem, 6vw, 5rem);
+            margin-bottom: 40px;
+            color: #fff;
+        }
+
+        /* --- Footer --- */
+        footer {
+            padding: 80px 0;
+            border-top: 1px solid var(--grid-line);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr;
+            gap: 40px;
+        }
+
+        .footer-col h4 {
+            color: #fff;
+            margin-bottom: 25px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+        }
+
+        .footer-col ul {
+            list-style: none;
+        }
+
+        .footer-col li {
+            margin-bottom: 15px;
+        }
+
+        .footer-col a {
+            color: var(--secondary-text);
+            text-decoration: none;
+            transition: color 0.3s;
+            font-size: 1.1rem;
+        }
+
+        .footer-col a:hover {
+            color: var(--accent-color);
+        }
+
+        .newsletter-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #333;
+            padding: 10px 0;
+            color: #fff;
+            font-family: var(--font-body);
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .newsletter-input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .copyright {
+            margin-top: 80px;
+            display: flex;
+            justify-content: space-between;
+            color: var(--secondary-text);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 768px) {
+            header { padding: 20px; }
+            .about-grid { grid-template-columns: 1fr; }
+            .about-visual { height: 400px; }
+            .section-header { flex-direction: column; align-items: flex-start; gap: 20px; }
+            .footer-grid { grid-template-columns: 1fr; gap: 40px; }
+            .cursor-dot, .cursor-outline { display: none; } /* Hide custom cursor on touch */
+            * { cursor: auto; }
+            nav { display: none; } /* Simple hiding for demo, would use burger menu in prod */
+        }
+
+        @media (max-width: 1024px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .steps { grid-template-columns: 1fr; }
+            .team-grid { grid-template-columns: 1fr; }
+            .insights-grid { grid-template-columns: 1fr; }
+            .faq-wrap { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Noise Texture -->
+    <div class="noise-overlay"></div>
+
+    <!-- Header Blur Backplate -->
+    <div class="header-blur"></div>
+
+    <!-- Custom Cursor -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
+    <!-- Preloader -->
+    <div class="preloader">
+        <div class="loader-text">LOADING EXPERIENCE</div>
+    </div>
+
+    <!-- Navigation -->
+    <header>
+        <a href="#" class="logo hover-target">AETHER</a>
+        <nav>
+            <ul>
+                <li><a href="#about" class="hover-target">Studio</a></li>
+                <li><a href="#services" class="hover-target">Services</a></li>
+                <li><a href="#work" class="hover-target">Work</a></li>
+                <li><a href="#process" class="hover-target">Process</a></li>
+                <li><a href="#team" class="hover-target">Team</a></li>
+                <li><a href="#insights" class="hover-target">Insights</a></li>
+                <li><a href="#faq" class="hover-target">FAQ</a></li>
+                <li><a href="#cta" class="hover-target">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-orb"></div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="pill hover-target" style="justify-content:center; margin: 0 auto 18px; width: fit-content;">
+                    <span class="eyebrow">New</span>
+                    <span>Brand systems, motion, and high-performance builds</span>
+                </div>
+                <h1 class="hero-title">We Craft<br>Digital Soul</h1>
+                <div class="hero-subtitle">
+                    <span>Bold Branding &bull; Interactive UI &bull; Motion Design</span>
+                </div>
+            </div>
+        </div>
+        <div class="scroll-hint">Scroll</div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about">
+        <div class="container">
+            <div class="about-grid">
+                <div class="about-text reveal-on-scroll">
+                    <h2>We are Aether.</h2>
+                    <p>A digital design studio obsessed with detail. We blend aesthetic purity with technical prowess to create experiences that feel alive. We don't just build websites; we engineer emotions.</p>
+                    <a href="#" class="btn-magnetic hover-target magnetic">Read Our Story</a>
+                </div>
+                <div class="about-visual parallax-wrapper">
+                    <img src="https://picsum.photos/seed/arch/800/1000" alt="Studio Abstract" class="about-img parallax-img">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services">
+        <div class="container">
+            <div class="section-header">
+                <h3 class="section-title">01 // Capabilities</h3>
+                <h2>What We Do</h2>
+            </div>
+            <div class="services-grid">
+                <div class="service-card hover-target">
+                    <span class="service-num">01</span>
+                    <h3>Brand Identity</h3>
+                    <p>Visual systems that speak louder than words. We build brands from the ground up with strategy and style.</p>
+                </div>
+                <div class="service-card hover-target">
+                    <span class="service-num">02</span>
+                    <h3>UI/UX Design</h3>
+                    <p>User-centric interfaces that are intuitive, engaging, and accessible across all devices.</p>
+                </div>
+                <div class="service-card hover-target">
+                    <span class="service-num">03</span>
+                    <h3>Motion Design</h3>
+                    <p>Adding life to static layouts. 2D animation, micro-interactions, and kinetic typography.</p>
+                </div>
+                <div class="service-card hover-target">
+                    <span class="service-num">04</span>
+                    <h3>Development</h3>
+                    <p>Clean, semantic code using modern frameworks. High performance and smooth animations guaranteed.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Work -->
+    <section id="work">
+        <div class="container">
+            <div class="section-header">
+                <h3 class="section-title">02 // Selected Works</h3>
+                <h2>Recent Projects</h2>
+            </div>
+            
+            <div class="project-list">
+                <!-- Project 1 -->
+                <article class="project-item">
+                    <div class="project-image-wrapper parallax-wrapper">
+                        <img src="https://picsum.photos/seed/neon/1600/900" alt="Project 1" class="project-image parallax-img">
+                    </div>
+                    <div class="project-info">
+                        <a href="#" class="project-title hover-target">Neon Horizon</a>
+                        <span class="project-tags">Branding / Web</span>
+                    </div>
+                </article>
+
+                <!-- Project 2 -->
+                <article class="project-item">
+                    <div class="project-image-wrapper parallax-wrapper">
+                        <img src="https://picsum.photos/seed/abstract9/1600/900" alt="Project 2" class="project-image parallax-img">
+                    </div>
+                    <div class="project-info">
+                        <a href="#" class="project-title hover-target">Void Fashion</a>
+                        <span class="project-tags">eCommerce / 3D</span>
+                    </div>
+                </article>
+
+                <!-- Project 3 -->
+                <article class="project-item">
+                    <div class="project-image-wrapper parallax-wrapper">
+                        <img src="https://picsum.photos/seed/tech/1600/900" alt="Project 3" class="project-image parallax-img">
+                    </div>
+                    <div class="project-info">
+                        <a href="#" class="project-title hover-target">Cyber Systems</a>
+                        <span class="project-tags">UI Kit / Dashboard</span>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats (Chapter) -->
+    <section id="stats">
+        <div class="container">
+            <div class="section-header">
+                <h3 class="section-title">03 // Proof</h3>
+                <h2>Impact by Design</h2>
+            </div>
+            <div class="stats-grid">
+                <div class="stat hover-target">
+                    <div class="num">+42%</div>
+                    <div class="label">Avg. conversion lift</div>
+                </div>
+                <div class="stat hover-target">
+                    <div class="num">120ms</div>
+                    <div class="label">Interaction latency</div>
+                </div>
+                <div class="stat hover-target">
+                    <div class="num">8–12w</div>
+                    <div class="label">Typical launch window</div>
+                </div>
+                <div class="stat hover-target">
+                    <div class="num">99/100</div>
+                    <div class="label">Perf score targets</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Process (Chapter) -->
+    <section id="process">
+        <div class="container">
+            <div class="section-header">
+                <h3 class="section-title">04 // Method</h3>
+                <h2>Our Process</h2>
+            </div>
+
+            <div class="grid-2">
+                <div class="glass-card" style="padding: 34px;">
+                    <p class="kicker">Aether Pipeline</p>
+                    <h2 style="margin-top: 14px; font-size: clamp(2.2rem, 5vw, 4rem);">Strategy → Design → Motion → Build</h2>
+                    <p style="margin-top: 16px; color: var(--secondary-text); line-height: 1.7; font-size: 1.08rem; max-width: 62ch;">
+                        We run lean, ship often, and obsess over details. Each stage is designed to reduce risk, increase clarity, and keep your stakeholders aligned.
+                    </p>
+                    <div style="margin-top: 22px; display:flex; flex-wrap: wrap; gap: 10px;">
+                        <span class="pill hover-target">Discovery</span>
+                        <span class="pill hover-target">Wireframes</span>
+                        <span class="pill hover-target">UI System</span>
+                        <span class="pill hover-target">Motion</span>
+                        <span class="pill hover-target">Build</span>
+                        <span class="pill hover-target">Launch</span>
+                    </div>
+                </div>
+
+                <div class="steps">
+                    <div class="step hover-target">
+                        <p class="kicker">01</p>
+                        <h3>Discover</h3>
+                        <p>Workshops, competitor teardown, and defining a clear north star. We map user journeys and decide what success looks like.</p>
+                    </div>
+                    <div class="step hover-target">
+                        <p class="kicker">02</p>
+                        <h3>Design</h3>
+                        <p>Fast iterations on IA, wireframes, and high-fidelity screens. Components are built to scale, not to impress a screenshot.</p>
+                    </div>
+                    <div class="step hover-target">
+                        <p class="kicker">03</p>
+                        <h3>Move</h3>
+                        <p>Micro-interactions, transitions, and scroll choreography with performance budgets. Motion always supports the story.</p>
+                    </div>
+                    <div class="step hover-target">
+                        <p class="kicker">04</p>
+                        <h3>Ship</h3>
+                        <p>Clean semantic code, accessibility, QA, and analytics. Launch is a milestone—not the finish line.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team (Chapter) -->
+    <section id="team">
+        <div class="container">
+            <div class="section-header">
+                <h3 class="section-title">05 // People</h3>
+                <h2>Small Team, Big Taste</h2>
+            </div>
+
+            <div class="team-grid">
+                <article class="member hover-target">
+                    <img src="https://picsum.photos/seed/portrait1/900/900" alt="Team Member 1">
+                    <div class="name">Mira Vale</div>
+                    <div class="role">Creative Director</div>
+                </article>
+                <article class="member hover-target">
+                    <img src="https://picsum.photos/seed/portrait2/900/900" alt="Team Member 2">
+                    <div class="name">Noah Kade</div>
+                    <div class="role">Motion Designer</div>
+                </article>
+                <article class="member hover-target">
+                    <img src="https://picsum.photos/seed/portrait3/900/900" alt="Team Member 3">
+                    <div class="name">Iris Chen</div>
+                    <div class="role">Frontend Engineer</div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- Insights (Chapter) -->
+    <section id="insights">
+        <div class="container">
+            <div class="section-header">
+                <h3 class="section-title">06 // Journal</h3>
+                <h2>Insights & Experiments</h2>
+            </div>
+
+            <div class="insights-grid">
+                <article class="post hover-target">
+                    <div class="meta"><span>Motion</span><span>5 min</span></div>
+                    <h3>Kinetic Typography That Doesn’t Jank</h3>
+                    <p>How we choreograph scroll moments with performance budgets, so animation feels premium—not heavy.</p>
+                    <a href="#cta" class="hover-target">Read More →</a>
+                </article>
+                <article class="post hover-target">
+                    <div class="meta"><span>Brand</span><span>7 min</span></div>
+                    <h3>Design Systems for Launch Velocity</h3>
+                    <p>Component thinking isn’t a constraint—it’s freedom. Here’s how we make design scale without losing soul.</p>
+                    <a href="#cta" class="hover-target">Read More →</a>
+                </article>
+                <article class="post hover-target">
+                    <div class="meta"><span>Web</span><span>6 min</span></div>
+                    <h3>From Beautiful to Fast: The Last 10%</h3>
+                    <p>Practical tricks: image strategy, layout shifts, animation choices, and why “smooth” starts in CSS.</p>
+                    <a href="#cta" class="hover-target">Read More →</a>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ (Chapter) -->
+    <section id="faq">
+        <div class="container">
+            <div class="section-header">
+                <h3 class="section-title">07 // Questions</h3>
+                <h2>FAQ</h2>
+            </div>
+
+            <div class="faq-wrap">
+                <div class="glass-card" style="padding: 28px;">
+                    <p class="kicker">Let’s make it easy</p>
+                    <h2 style="margin-top: 12px; font-size: clamp(2rem, 4.2vw, 3.2rem);">Clear answers, no fluff.</h2>
+                    <p style="margin-top: 14px; color: var(--secondary-text); line-height: 1.7; font-size: 1.05rem;">
+                        Timelines, pricing ranges, and what to expect. If you don’t see your question, send a message and we’ll respond fast.
+                    </p>
+                    <div style="margin-top: 18px;">
+                        <a href="#cta" class="btn-magnetic hover-target magnetic">Ask a Question</a>
+                    </div>
+                </div>
+
+                <div>
+                    <details class="faq hover-target">
+                        <summary>How long does a typical project take? <span class="plus">+</span></summary>
+                        <p>Most launches land in 8–12 weeks depending on scope. We’ll share a milestone plan in week one so you always know what’s next.</p>
+                    </details>
+                    <details class="faq hover-target">
+                        <summary>Do you do design-only engagements? <span class="plus">+</span></summary>
+                        <p>Yes. We can deliver a full design system with motion guidelines, or partner with your team for implementation support.</p>
+                    </details>
+                    <details class="faq hover-target">
+                        <summary>Can you improve an existing site? <span class="plus">+</span></summary>
+                        <p>Absolutely—audits, performance, accessibility, and visual refreshes are common. We’ll start with a teardown and a prioritized roadmap.</p>
+                    </details>
+                    <details class="faq hover-target">
+                        <summary>What’s your tech stack? <span class="plus">+</span></summary>
+                        <p>We pick what fits: clean HTML/CSS, modern frameworks when needed, and GSAP for motion. Performance and accessibility are non-negotiable.</p>
+                    </details>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section id="cta">
+        <div class="container">
+            <h2 class="cta-title reveal-text">Ready to elevate<br>your digital presence?</h2>
+            <a href="mailto:hello@aether.studio" class="btn-magnetic hover-target magnetic">Start a Project</a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <a href="#" class="logo hover-target" style="font-size: 2rem;">AETHER</a>
+                    <p style="margin-top: 20px; color: #888; max-width: 300px;">
+                        Defining the future of digital interaction through bold design and fluid motion.
+                    </p>
+                </div>
+                <div class="footer-col">
+                    <h4>Sitemap</h4>
+                    <ul>
+                        <li><a href="#about" class="hover-target">About</a></li>
+                        <li><a href="#services" class="hover-target">Services</a></li>
+                        <li><a href="#work" class="hover-target">Work</a></li>
+                        <li><a href="#cta" class="hover-target">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Socials</h4>
+                    <ul>
+                        <li><a href="#" class="hover-target">Instagram</a></li>
+                        <li><a href="#" class="hover-target">Twitter</a></li>
+                        <li><a href="#" class="hover-target">LinkedIn</a></li>
+                        <li><a href="#" class="hover-target">Behance</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Newsletter</h4>
+                    <form onsubmit="event.preventDefault();">
+                        <input type="email" placeholder="Email Address" class="newsletter-input hover-target">
+                    </form>
+                </div>
+            </div>
+            <div class="copyright">
+                <span>&copy; 2023 Aether Studio. All rights reserved.</span>
+                <span>Designed with GSAP</span>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Register GSAP Plugins
+        gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+
+        // --- Header Scroll State ---
+        const setScrolled = () => {
+            document.body.classList.toggle('scrolled', window.scrollY > 20);
+        };
+        window.addEventListener('scroll', setScrolled, { passive: true });
+        setScrolled();
+
+        // --- Smooth Anchor Scroll (with fixed header offset) ---
+        const headerOffset = 110;
+        document.querySelectorAll('a[href^="#"]').forEach(a => {
+            a.addEventListener('click', (e) => {
+                const hash = a.getAttribute('href');
+                if (!hash || hash === '#') return;
+                const target = document.querySelector(hash);
+                if (!target) return;
+                e.preventDefault();
+                const y = target.getBoundingClientRect().top + window.pageYOffset - headerOffset;
+                gsap.to(window, { duration: 1.1, scrollTo: y, ease: "power3.inOut" });
+            });
+        });
+
+        // --- Custom Cursor Logic (GSAP quickTo + states) ---
+        const supportsFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const cursorDot = document.querySelector('.cursor-dot');
+        const cursorOutline = document.querySelector('.cursor-outline');
+
+        if (supportsFinePointer && !reduceMotion && cursorDot && cursorOutline) {
+            const hoverTargets = document.querySelectorAll('.hover-target');
+
+            const dotX = gsap.quickTo(cursorDot, "left", { duration: 0.08, ease: "power3.out" });
+            const dotY = gsap.quickTo(cursorDot, "top", { duration: 0.08, ease: "power3.out" });
+            const outX = gsap.quickTo(cursorOutline, "left", { duration: 0.22, ease: "power3.out" });
+            const outY = gsap.quickTo(cursorOutline, "top", { duration: 0.22, ease: "power3.out" });
+
+            window.addEventListener('mousemove', (e) => {
+                dotX(e.clientX);
+                dotY(e.clientY);
+                outX(e.clientX);
+                outY(e.clientY);
+            }, { passive: true });
+
+            // Hover effects for interactive elements
+            hoverTargets.forEach(el => {
+                el.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+                el.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+            });
+
+            // Text cursor state
+            const textTargets = document.querySelectorAll('p, h1, h2, h3, li, summary, input, textarea');
+            textTargets.forEach(el => {
+                el.addEventListener('mouseenter', () => document.body.classList.add('cursor-text'));
+                el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-text'));
+            });
+
+            // Optional drag state for parallax blocks
+            document.querySelectorAll('.parallax-wrapper').forEach(el => {
+                el.addEventListener('mousedown', () => document.body.classList.add('cursor-drag'));
+                window.addEventListener('mouseup', () => document.body.classList.remove('cursor-drag'));
+            });
+        } else {
+            // Hide custom cursor elements when not supported
+            if (cursorDot) cursorDot.style.display = "none";
+            if (cursorOutline) cursorOutline.style.display = "none";
+        }
+
+        // --- Magnetic Buttons Logic ---
+        const magneticBtns = document.querySelectorAll('.magnetic');
+        
+        magneticBtns.forEach((btn) => {
+            btn.addEventListener('mousemove', (e) => {
+                const rect = btn.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+
+                // GSAP smooth movement
+                gsap.to(btn, {
+                    x: x * 0.3, // Strength of magnet
+                    y: y * 0.3,
+                    duration: 0.3,
+                    ease: "power2.out"
+                });
+            });
+
+            btn.addEventListener('mouseleave', () => {
+                gsap.to(btn, {
+                    x: 0,
+                    y: 0,
+                    duration: 0.5,
+                    ease: "elastic.out(1, 0.3)"
+                });
+            });
+        });
+
+        // --- Text Splitting Utility (Simulating SplitText without paid plugin) ---
+        function splitTextToSpans(element) {
+            const text = element.innerText;
+            element.innerHTML = '';
+            text.split('').forEach(char => {
+                const span = document.createElement('span');
+                // Preserve spaces
+                if (char === ' ') {
+                    span.innerHTML = '&nbsp;';
+                } else {
+                    span.innerText = char;
+                }
+                element.appendChild(span);
+            });
+        }
+
+        // Apply split to Hero Title
+        const heroTitle = document.querySelector('.hero-title');
+        splitTextToSpans(heroTitle);
+        const heroSpans = heroTitle.querySelectorAll('span');
+
+        // --- Page Load Animation ---
+        window.addEventListener('load', () => {
+            const tl = gsap.timeline();
+
+            // 1. Hide Preloader
+            tl.to('.preloader', {
+                yPercent: -100,
+                duration: 1,
+                ease: "power4.inOut",
+                delay: 0.5
+            })
+            // 2. Reveal Hero Text (Staggered)
+            .to(heroSpans, {
+                y: 0,
+                opacity: 1,
+                duration: 1.2,
+                stagger: 0.03,
+                ease: "power3.out"
+            }, "-=0.5")
+            // 3. Reveal Subtitle
+            .to('.hero-subtitle span', {
+                y: 0,
+                duration: 1,
+                ease: "power3.out"
+            }, "-=0.8");
+        });
+
+        // --- ScrollTrigger Animations ---
+
+        // 1. About Section Text Reveal
+        gsap.from('.about-text > *', {
+            scrollTrigger: {
+                trigger: '#about',
+                start: "top 70%",
+            },
+            y: 50,
+            opacity: 0,
+            duration: 1,
+            stagger: 0.2,
+            ease: "power3.out"
+        });
+
+        // 2. Services Staggered Fade Up
+        gsap.from('.service-card', {
+            scrollTrigger: {
+                trigger: '.services-grid',
+                start: "top 75%",
+            },
+            y: 100,
+            opacity: 0,
+            duration: 0.8,
+            stagger: 0.1,
+            ease: "power3.out"
+        });
+
+        // 3. Parallax Images (Work & About)
+        // Note: We use simple parallax logic via GSAP yPercent for performance
+        document.querySelectorAll('.parallax-wrapper').forEach(wrapper => {
+            const img = wrapper.querySelector('.parallax-img');
+            
+            gsap.to(img, {
+                scrollTrigger: {
+                    trigger: wrapper,
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: true
+                },
+                yPercent: 20, // Move image down 20% relative to its height
+                ease: "none"
+            });
+        });
+
+        // 4. Project Reveal
+        document.querySelectorAll('.project-item').forEach((item, i) => {
+            gsap.from(item.querySelector('.project-image-wrapper'), {
+                scrollTrigger: {
+                    trigger: item,
+                    start: "top 80%",
+                },
+                scale: 0.95,
+                opacity: 0,
+                duration: 1,
+                ease: "power2.out"
+            });
+        });
+
+        // 5. CTA Text Reveal
+        gsap.from('.cta-title', {
+            scrollTrigger: {
+                trigger: '#cta',
+                start: "top 70%",
+            },
+            y: 100,
+            opacity: 0,
+            duration: 1,
+            ease: "power3.out"
+        });
+
+        // 6. Footer Stagger
+        gsap.from('.footer-col', {
+            scrollTrigger: {
+                trigger: 'footer',
+                start: "top 90%",
+            },
+            y: 30,
+            opacity: 0,
+            duration: 0.8,
+            stagger: 0.1,
+            ease: "power2.out"
+        });
+
+        // 7. Generic reveal for new chapter cards
+        gsap.utils.toArray('#stats .stat, #process .step, #team .member, #insights .post, #faq details.faq').forEach((el) => {
+            gsap.from(el, {
+                scrollTrigger: {
+                    trigger: el,
+                    start: "top 85%",
+                },
+                y: 40,
+                opacity: 0,
+                duration: 0.9,
+                ease: "power3.out"
+            });
+        });
+
+    </script>
+</body>
+</html>
